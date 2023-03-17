@@ -1,0 +1,64 @@
+import bpy
+import math
+import random
+
+def create_low_poly_tree():
+    # Remove all existing mesh objects
+    bpy.ops.object.select_all(action='DESELECT')
+    bpy.ops.object.select_by_type(type='MESH')
+    bpy.ops.object.delete()
+
+    # Create trunk
+    bpy.ops.mesh.primitive_cylinder_add(vertices=12, radius=0.25, depth=4)
+    trunk = bpy.context.active_object
+    trunk.name = "TreeTrunk"
+
+    # Create branches
+    branches = []
+    for _ in range(4):
+        bpy.ops.mesh.primitive_cone_add(vertices=6, radius1=0.4, radius2=0.0, depth=1.5)
+        branch = bpy.context.active_object
+        branch.name = f"TreeBranch{_}"
+        branch.rotation_euler = (0, 0, random.uniform(0, math.pi * 2))
+        branch.location = (0, 0, random.uniform(1, 3))
+        branches.append(branch)
+
+    # Create leaves
+    leaves = []
+    for branch in branches:
+        for _ in range(4):
+            bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=1, radius=0.4)
+            leaf = bpy.context.active_object
+            leaf.name = f"TreeLeaf{_}"
+            leaf.location = branch.location + mathutils.Vector((random.uniform(-0.5, 0.5), random.uniform(-0.5, 0.5), random.uniform(0.5, 1.5)))
+            leaves.append(leaf)
+
+    # Create apples
+    apples = []
+    for leaf in leaves:
+        if random.random() < 0.5:
+            bpy.ops.mesh.primitive_uv_sphere_add(segments=8, ring_count=4, radius=0.15)
+            apple = bpy.context.active_object
+            apple.name = f"TreeApple{_}"
+            apple.location = leaf.location + mathutils.Vector((random.uniform(-0.2, 0.2), random.uniform(-0.2, 0.2), -0.3))
+            apples.append(apple)
+
+    # Join trunk, branches, leaves, and apples
+    bpy.ops.object.select_all(action='DESELECT')
+    trunk.select_set(True)
+    for branch in branches:
+        branch.select_set(True)
+    for leaf in leaves:
+        leaf.select_set(True)
+    for apple in apples:
+        apple.select_set(True)
+    bpy.context.view_layer.objects.active = trunk
+    bpy.ops.object.join()
+
+    # Set origin to bottom center
+    bpy.ops.object.origin_set(type='ORIGIN_CENTER_OF_MASS', center='BOUNDS')
+    z_offset = min([v.co.z for v in trunk.data.vertices])
+    trunk.location = (0, 0, -z_offset)
+
+if __name__ == "__main__":
+    create_low_poly_tree()
